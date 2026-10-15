@@ -38,10 +38,11 @@ inflate scoring, and kept the skill curve. "Side bite" is now a per-club trait:
 WUNDERBAT keeps little (strong straight, weak at angles), the mid club keeps a
 lot.
 
-**Defence schemes (5):** IN / OUT / MID / WIDE / RING — depth and width bands.
-Renamed from Crowd/Wall/Pinch/Spread/Ring because those needed explaining.
+**Defence schemes (5):** CLOSE / DEEP / LINE / WIDE / WHEEL — depth and width bands
+(code: `lib/sim/fielder_spec.dart`). Earlier names: IN/OUT/MID/WIDE/RING, and before
+that Crowd/Wall/Pinch/Spread/Ring. Mapping: IN→CLOSE, OUT→DEEP, MID→LINE, RING→WHEEL.
 
-**DECISION: MID is flattened.** All three men bunched on the middle at the
+**DECISION: LINE (formerly MID) is flattened.** All three men bunched on the middle at the
 SAME depth. Previously they were bunched and also staggered front-to-back,
 covering 7-39 paces of a 44-pace field, so nothing went through it or over it
 — it was the only genuinely unbeatable scheme. Flattening keeps the "everybody
@@ -144,9 +145,11 @@ fielding gaps and adds strategy, it is not a stat check.
 
 **Teams are 5 players.** 5 x 3 slots = a 15-card loadout.
 
-**Teams:** pitcher + 3 fielders on defence, all 5 bat, the 5th is a DH who
-never fields. The DH slot is where the slow/strong archetype lives, so you can
-afford exactly one defensive liability.
+**Teams:** thrower + 3 fielders + a catcher on defence; all 5 bat. The catcher
+(the Mighty man) stands behind the plate, guards home and never chases
+(`FielderSpec.chases == false`, see `lib/sim/fielder_spec.dart` and the
+viewport note). He replaces the earlier DH idea: the slow/strong archetype
+still lives in the one slot that never runs after the ball.
 
 **LOCKED: the defensive loop.** Ball is hit -> player taps ONE fielder to chase
 it -> the other three automatically cover a base each (4 defenders, 1 chases,
@@ -261,9 +264,9 @@ schemes guard; it will report the skill curve as INVERTED. Model the player as
 picking the biggest gap in the revealed scheme and executing to within his
 accuracy (see bestAngleFor in tool/game_report.dart).
 
-**With no catcher there are FOUR bags and three cover men.** One is always
-left unguarded, and which one is a real decision — leave home and the run
-scores, leave first and the batter is safe. Coverage is assigned to the bags
+**FOUR bags, four cover men (catcher on home).** One man chases, the other four
+cover first, second, third and home, so no bag is left open. (Superseded: the
+earlier no-catcher design had three cover men and always left one bag open.) Coverage is assigned to the bags
 runners are actually heading for, nearest-to-scoring first.
 
 **Progression target: 3/4 of slots filled** by the end of a strong run, i.e.

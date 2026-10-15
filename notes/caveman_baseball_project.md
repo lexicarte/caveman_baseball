@@ -61,12 +61,16 @@ already rewritten - it analysed clean and tested clean while every loft card
 resolved as a ground ball. Assert that a replacement matched before writing,
 and `test/fielding_test.dart` now guards this specific failure.
 
-**Tuning is tool-driven, not by hand.** `dart run tool/balance_sweep.dart`
-searches knobs against constraints (starter deck weak but functional, upgrades
-felt, skill monotonic); `tool/card_report.dart` prices every card;
-`tool/game_report.dart` plays 300 full games and reports scorelines;
-`tool/fielding_report.dart` and `tool/tuning_report.dart` cover fielding and
-ball roll-out. Always check `game_report` after changing anything — per-swing
+**Tuning is tool-driven, not by hand.** Tools in the repo: `tool/game_report.dart`
+plays 300 full games and reports scorelines; `tool/matchup_matrix.dart`
+(scheme/rock/club matrix and invariants); `tool/baseline_check.dart`;
+`tool/playbyplay.dart`; `tool/harness.dart`; tap-region tools
+(`tap_regions*.dart`, `tap_fix_sweep.dart`); `tool/draw_schemes.dart`.
+**Not in the repo** (referenced historically, never committed):
+`balance_sweep.dart` (knob search against constraints: starter deck weak but
+functional, upgrades felt, skill monotonic), `card_report.dart` (prices every
+card), `fielding_report.dart` and `tuning_report.dart` (fielding and ball
+roll-out). Rebuild them before relying on them. Always check `game_report` after changing anything — per-swing
 numbers can look fine while whole games are 0-0.
 
 **Not built:** NO DEFENSIVE GAMEPLAY — the player picks a ball card and then
