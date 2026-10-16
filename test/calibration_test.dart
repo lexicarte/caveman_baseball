@@ -82,22 +82,25 @@ void main() {
 
   test('it catches a trajectory that does not track the batter', () {
     // The real bug: a hard-coded lift, independent of where the bat is.
-    // These were the shipped values, and they cost 214ms.
-    final bad = c.copyWith(liftRelease: 2.8, liftPlate: 0.8);
+    // 2.8 at the hand and 0.8 at the plate were the shipped values. They
+    // put the rock at the ankles and cost 214ms, later ~118ms after the
+    // pitch sped up. At 48pt the bat has risen to about that same plate
+    // height, so those two numbers are only ~10ms off and no longer the
+    // miss. Aiming the arrival at the feet, still without consulting the
+    // hands, is the same kind of trajectory.
+    final atFeet = Ground.y(c.contactDepth) - Ground.y(c.batterY);
+    final bad = c.copyWith(liftRelease: 2.8, liftPlate: atFeet);
     final cross = bad.crossing();
 
-    // Either outcome is the instrument doing its job. Since figures shrink
-    // at the at-bat view, that old hard-coded lift now sails clean over the
-    // bat and never meets it at all — which is caught harder than a bad
-    // crossing, not more softly.
-    if (cross == null) return;
-    // It measured 214ms when it shipped. It is ~118ms now, and the drop is
-    // real rather than a regression in the instrument: the pitch got 20%
-    // faster, so the same spatial error is worth fewer milliseconds, and
-    // contact moved 0.5 paces in front of the plate, which absorbs more.
-    // Still far outside anything a player could absorb.
+    // It has to cross. A null result would also be returned by an
+    // instrument that never looks, and that is not a catch.
     expect(
-      cross.errorMs.abs(),
+      cross,
+      isNotNull,
+      reason: 'an ankle-high rock still passes the bat on the way down',
+    );
+    expect(
+      cross!.errorMs.abs(),
       greaterThan(100),
       reason:
           'the instrument must report the bug it was built for, got '

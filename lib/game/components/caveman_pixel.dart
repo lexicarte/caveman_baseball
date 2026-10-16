@@ -12,6 +12,7 @@
 import 'dart:ui';
 
 import '../../model/player.dart';
+import '../sprites/pixel_snap.dart';
 import 'caveman.dart';
 
 class PixelCavemanPainter {
@@ -172,10 +173,9 @@ class PixelCavemanPainter {
     bool detailed = false,
     Pose pose = const Pose.still(),
   }) {
-    final build = CavemanPainter.buildFor(archetype);
     // Same overall height as the other painters, so swapping styles never
     // changes how big anyone is on the field.
-    final h = height * (0.92 + 0.12 * build);
+    final h = CavemanPainter.drawnHeight(archetype, height);
 
     final rows = switch (pose.act) {
       Act.swing => swinging,
@@ -186,11 +186,18 @@ class PixelCavemanPainter {
 
     final cell = h / rows.length;
     final w = rows[0].length * cell;
-    final left = ground.dx - (standFor(archetype)[0].length * cell) / 2;
-    final top = ground.dy - h;
+    // Whole pixels, so the grid does not shimmer as the camera eases.
+    // The cell overlap below still covers a size that is not itself an
+    // integer number of pixels — perspective is allowed to shrink a man.
+    final dpr =
+        PlatformDispatcher.instance.implicitView?.devicePixelRatio ?? 1.0;
+    final snapped =
+        PixelSnap.fromCanvas(canvas, dpr)?.snapWorld(ground) ?? ground;
+    final left = snapped.dx - (standFor(archetype)[0].length * cell) / 2;
+    final top = snapped.dy - h;
 
     canvas.drawOval(
-      Rect.fromCenter(center: ground, width: w * 0.8, height: cell * 2.4),
+      Rect.fromCenter(center: snapped, width: w * 0.8, height: cell * 2.4),
       Paint()..color = _shadow,
     );
 

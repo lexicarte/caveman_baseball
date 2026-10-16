@@ -53,7 +53,7 @@ class CavemanPainter {
   /// four amplitudes per cycle.
   static double strideFor(Archetype a, double height) {
     final build = buildFor(a);
-    final h = height * (0.92 + 0.12 * build);
+    final h = drawnHeight(a, height);
     return 4 * _strideAmp * h * 0.34 * build;
   }
 
@@ -96,6 +96,15 @@ class CavemanPainter {
     Archetype.mighty => 1.22,
   };
 
+  /// How tall a man is actually drawn, as a multiple of the height he is
+  /// given. Steady is the size the camera and the bat are measured against.
+  static const double steadyDrawnFactor = 0.92 + 0.12 * 1.0;
+
+  static double drawnHeightFactor(Archetype a) => 0.92 + 0.12 * buildFor(a);
+
+  static double drawnHeight(Archetype a, double height) =>
+      height * drawnHeightFactor(a);
+
   /// [ground] is where his feet are, in render space. He is drawn upward from
   /// there and never squashed.
   void paint(
@@ -112,7 +121,7 @@ class CavemanPainter {
     Pose pose = const Pose.still(),
   }) {
     final build = buildFor(archetype);
-    final h = height * (0.92 + 0.12 * build);
+    final h = drawnHeight(archetype, height);
     final shoulder = h * 0.34 * build;
     final headR = h * 0.17;
     final hide = tint ?? hideFor(archetype);

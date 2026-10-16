@@ -73,7 +73,8 @@ class Calibration {
   /// Override the rock's height at release and at the plate. Null means
   /// derived — pitched so it meets the bat at [contactDepth], which is what
   /// the game does. Setting them is how you reproduce a broken trajectory:
-  /// 2.8 and 0.8 were the values that put the rock at the batter's ankles.
+  /// 2.8 and 0.8 put the rock at the batter's ankles when men were 34pt.
+  /// At 48pt the bat sits about that high, so that pair is no longer a miss.
   final double? liftRelease;
   final double? liftPlate;
 

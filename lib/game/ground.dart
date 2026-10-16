@@ -60,8 +60,27 @@ class Ground {
   /// below, field between. The game gets these from Flutter layout; they
   /// are stated here so the swing bench can frame its replay the same way
   /// and so [tightLook] has something to be derived against.
+  ///
+  /// A 48pt at-bat figure still clears both edges (head well below the
+  /// scoreboard, the low point of the swing above the cards — see
+  /// figure_scale_test). The art checklist's 120/554 split would put those
+  /// feet behind the cards at this camera, so the bands stay where the
+  /// HUD actually is.
   static const double bandTop = 0.235;
   static const double bandBottom = 0.787;
+
+  /// Logical pixels per world unit at [zoom] on the reference phone.
+  static double referencePixelsPerUnit(double zoom) =>
+      LookDefaults.referenceScreenWidth * zoom / viewportWidth;
+
+  /// World y at [fractionDown] of the full portrait screen (0 is the top),
+  /// with the camera aimed at [look]. This is the game's viewfinder, which
+  /// centres the whole screen, not the band.
+  static double worldYOnScreen({
+    required double zoom,
+    required double look,
+    required double fractionDown,
+  }) => look + (fractionDown - 0.5) * (viewportHeight / zoom);
 
   // --- how big a man is ------------------------------------------------
   //
@@ -81,9 +100,8 @@ class Ground {
   /// depth, so he reads at a glance.
   static double get figureHeightWide => Look.now.figureHeightWide;
 
-  /// A man at the at-bat view. 34 points tall on a 390pt screen — above
-  /// the ~28pt floor where the cartoon style's eyes stop reading, and far
-  /// enough from the mound to look like baseball.
+  /// A man at the at-bat view. 48 points tall on a 390pt screen — one art
+  /// pixel per point, the native FIELD caveman. Was 34pt (1.56 world units).
   static double get figureHeightTight => Look.now.figureHeightTight;
 
   /// Kept for anything that wants the unzoomed size.
@@ -159,7 +177,8 @@ class Ground {
   static double x(double fieldX, [double fieldY = 0]) =>
       fieldX * depthScale(fieldY);
 
-  static double y(double fieldY) => plateY - squash * fieldY * depthScale(fieldY);
+  static double y(double fieldY) =>
+      plateY - squash * fieldY * depthScale(fieldY);
 
   /// Inverse, for turning a tap back into a place on the field.
   ///
@@ -196,7 +215,11 @@ class Ground {
   /// in RENDER units — so it shrinks with distance like everything else.
   /// Without [atFieldY] a ball lofted into the outfield climbs as high on
   /// screen as one popped up over the plate.
-  static double arcHeight(double travelled, double carry, [double atFieldY = 0]) {
+  static double arcHeight(
+    double travelled,
+    double carry, [
+    double atFieldY = 0,
+  ]) {
     if (carry <= 0) return 0;
     final t = (travelled / carry).clamp(0.0, 1.0);
     return math.sin(t * math.pi) * carry * 0.16 * depthScale(atFieldY);

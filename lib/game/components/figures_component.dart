@@ -10,9 +10,9 @@ import '../../sim/base_running.dart';
 import '../art/art_style.dart';
 import '../ground.dart';
 import '../look.dart';
+import '../sprites/field_figure.dart';
+import '../sprites/sprite_library.dart';
 import 'caveman.dart';
-import 'caveman_cartoon.dart';
-import 'caveman_pixel.dart';
 
 /// One person to draw, at a place on the field.
 class Figure {
@@ -42,7 +42,11 @@ class Figure {
 }
 
 class FiguresComponent extends PositionComponent {
-  FiguresComponent() : super(priority: 10);
+  FiguresComponent({SpriteLibrary? sprites})
+    : sprites = sprites ?? SpriteLibrary(),
+      super(priority: 10);
+
+  final SpriteLibrary sprites;
 
   List<Figure> figures = const [];
 
@@ -54,10 +58,18 @@ class FiguresComponent extends PositionComponent {
   /// heights from the plate and nothing about the at-bat reads as baseball.
   double zoom = Ground.wideZoom;
 
-  static const _pixel = PixelCavemanPainter();
-  static const _cartoon = CartoonCavemanPainter();
+  /// Idle sheets bob on their own clock. Swings and runs are driven by the
+  /// pose, which the game already times.
+  double idleSeconds = 0;
+
   static const _chaserTint = Color(0xFF7A4034);
   static const _cartoonChaserTint = Color(0xFFC4452C);
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    idleSeconds += dt;
+  }
 
   @override
   void render(Canvas canvas) {
@@ -94,29 +106,18 @@ class FiguresComponent extends PositionComponent {
       // says he is. A deep fielder drawn the same size as the batter was
       // the loudest thing saying "this is a board, not a field".
       final figureHeight = Ground.figureHeightAt(zoom, f.fieldY);
-      if (cartoon) {
-        _cartoon.paint(
-          canvas,
-          ground: Offset(Ground.x(f.fieldX, f.fieldY), Ground.y(f.fieldY)),
-          archetype: f.archetype,
-          height: figureHeight,
-          tint: f.chasing ? _cartoonChaserTint : null,
-          holdingClub: f.holdingClub,
-          pose: pose,
-          detailed: true,
-        );
-      } else {
-        _pixel.paint(
-          canvas,
-          ground: Offset(Ground.x(f.fieldX, f.fieldY), Ground.y(f.fieldY)),
-          archetype: f.archetype,
-          height: figureHeight,
-          tint: f.chasing ? _chaserTint : null,
-          holdingClub: f.holdingClub,
-          pose: pose,
-          detailed: true,
-        );
-      }
+      paintFieldFigure(
+        canvas,
+        sprites: sprites,
+        ground: Offset(Ground.x(f.fieldX, f.fieldY), Ground.y(f.fieldY)),
+        archetype: f.archetype,
+        height: figureHeight,
+        tint: f.chasing ? (cartoon ? _cartoonChaserTint : _chaserTint) : null,
+        holdingClub: f.holdingClub,
+        pose: pose,
+        detailed: true,
+        idleSeconds: idleSeconds,
+      );
     }
   }
 }
