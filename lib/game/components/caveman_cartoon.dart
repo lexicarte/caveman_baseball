@@ -105,13 +105,26 @@ class CartoonCavemanPainter {
     Archetype.mighty => const Color(0xFF2A1C12),
   };
 
+  /// Shoulder/hide width relative to STEADY. The 48px art uses the same
+  /// ratios (18 / 24 / 32). Build ([CavemanPainter.buildFor]) is a separate
+  /// number and still drives height and stride.
+  static const double swiftBody = 0.74;
+  static const double steadyBody = 1.0;
+  static const double mightyBody = 1.34;
+
+  static double bodyWidthOf(Archetype a) => switch (a) {
+    Archetype.swift => swiftBody,
+    Archetype.steady => steadyBody,
+    Archetype.mighty => mightyBody,
+  };
+
   /// Body width, head size, limb thickness and beard size by build.
   static ({double body, double head, double limb, double beard}) _dims(
     Archetype a,
   ) => switch (a) {
-    Archetype.swift => (body: 0.74, head: 0.92, limb: 0.82, beard: 0.80),
-    Archetype.steady => (body: 1.00, head: 1.00, limb: 1.00, beard: 1.00),
-    Archetype.mighty => (body: 1.34, head: 1.04, limb: 1.22, beard: 1.22),
+    Archetype.swift => (body: swiftBody, head: 0.92, limb: 0.82, beard: 0.80),
+    Archetype.steady => (body: steadyBody, head: 1.00, limb: 1.00, beard: 1.00),
+    Archetype.mighty => (body: mightyBody, head: 1.04, limb: 1.22, beard: 1.22),
   };
 
   /// Where the club's hand and tip are at swing phase [t], as offsets from
@@ -123,8 +136,7 @@ class CartoonCavemanPainter {
     double t, {
     SwingCurve curve = SwingCurve.shipped,
   }) {
-    final build = CavemanPainter.buildFor(archetype);
-    final h = height * (0.92 + 0.12 * build);
+    final h = CavemanPainter.drawnHeight(archetype, height);
     final d = _dims(archetype);
     final bodyHalf = h * 0.17 * d.body;
     final shoulderDy = -h + 0.44 * h;
@@ -160,7 +172,7 @@ class CartoonCavemanPainter {
     final build = CavemanPainter.buildFor(archetype);
     // Same overall height as the classic painter, so swapping styles does
     // not change how big anyone is on the field.
-    final h = height * (0.92 + 0.12 * build);
+    final h = CavemanPainter.drawnHeight(archetype, height);
     final hide = tint ?? hideFor(archetype);
     final hair = hairFor(archetype);
     final sw = h * 0.030;

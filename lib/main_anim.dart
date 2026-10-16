@@ -8,7 +8,7 @@
 //
 // What it is for, in order of how much it matters:
 //   1. The in-game size row. Everything looks fine at 180px; the only
-//      question that decides an art direction is whether it reads at 28.
+//      question that decides an art direction is whether it reads at 48.
 //   2. TRAVEL on a run. A run cycle driven by a timer always skates. Driven
 //      by distance it cannot, and this shows the difference side by side.
 //   3. The filmstrip, which is how you actually judge a cycle — a single
@@ -22,6 +22,7 @@ import 'game/art/art_style.dart';
 import 'game/components/caveman.dart';
 import 'game/components/caveman_cartoon.dart';
 import 'game/components/caveman_pixel.dart';
+import 'game/look.dart';
 import 'model/player.dart';
 
 void main() => runApp(const AnimWorkbenchApp());
@@ -33,8 +34,14 @@ const double _secondsPerBase = 2.58;
 /// Pixels per pace on the portrait board. Matches the design canvases.
 const double _pxPerPace = 6.3;
 
-/// What the figures are actually drawn at on the field.
-const double _inGameHeight = 28;
+/// Height argument that draws a steady man at the at-bat size. The painter
+/// multiplies by [CavemanPainter.steadyDrawnFactor], so this is 48px divided
+/// back out — what the field actually shows.
+const double _inGameHeight =
+    LookDefaults.fieldFigurePoints / CavemanPainter.steadyDrawnFactor;
+
+String get _inGameLabel =>
+    'in-game ${LookDefaults.fieldFigurePoints.round()}px';
 
 class AnimWorkbenchApp extends StatelessWidget {
   const AnimWorkbenchApp({super.key});
@@ -43,9 +50,8 @@ class AnimWorkbenchApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: 'Caveman animation workbench',
     debugShowCheckedModeBanner: false,
-    theme: ThemeData.dark(
-      useMaterial3: true,
-    ).copyWith(scaffoldBackgroundColor: const Color(0xFF14110D)),
+    theme: ThemeData.dark(useMaterial3: true)
+        .copyWith(scaffoldBackgroundColor: const Color(0xFF14110D)),
     home: const _Workbench(),
   );
 }
@@ -146,7 +152,8 @@ class _WorkbenchState extends State<_Workbench>
             Expanded(
               flex: 2,
               child: _panel(
-                'AT IN-GAME SIZE — 28px, what the field actually shows',
+                'AT IN-GAME SIZE — ${LookDefaults.fieldFigurePoints.round()}px, '
+                'what the field actually shows',
                 CustomPaint(
                   painter: _StagePainter(
                     act: _act,
@@ -329,7 +336,7 @@ class _WorkbenchState extends State<_Workbench>
               ),
               TextButton(
                 onPressed: () => setState(() => _height = _inGameHeight),
-                child: const Text('in-game 28px'),
+                child: Text(_inGameLabel),
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,

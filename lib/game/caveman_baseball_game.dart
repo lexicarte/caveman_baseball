@@ -20,6 +20,7 @@ import 'ground.dart';
 import 'look.dart';
 import 'components/figures_component.dart';
 import 'match_controller.dart';
+import 'sprites/sprite_library.dart';
 
 class CavemanBaseballGame extends FlameGame {
   CavemanBaseballGame({required this.match})
@@ -144,8 +145,7 @@ class CavemanBaseballGame extends FlameGame {
     // the thrower's hand — which is as high as HIS drawn height, and he
     // is drawn smaller because he is further away — and arrives at the
     // bat's height exactly at the contact depth.
-    final atHand =
-        handDrop * drawnHeight * Ground.depthScale(throwerDepth);
+    final atHand = handDrop * drawnHeight * Ground.depthScale(throwerDepth);
     final dc = MatchController.contactDepth;
     if (throwerDepth <= dc) return atHand;
     final atBat = Ground.y(dc) - batHeight;
@@ -166,8 +166,12 @@ class CavemanBaseballGame extends FlameGame {
 
   @override
   Future<void> onLoad() async {
+    final sprites = SpriteLibrary();
+    // Missing sheets are the normal case until art is exported. The library
+    // leaves those poses empty and the figures stay code-drawn.
+    await sprites.loadAvailable();
     _ball = BallComponent();
-    _figures = FiguresComponent();
+    _figures = FiguresComponent(sprites: sprites);
     _fieldComponent = FieldComponent(spec: MatchController.field);
     world.addAll([_fieldComponent, _figures, _ball]);
   }
@@ -216,7 +220,7 @@ class CavemanBaseballGame extends FlameGame {
     }
 
     if (match.interception == null) {
-      // Tap the GROUND, not the man. A fielder is 28px of sprite and CLOSE
+      // Tap the GROUND, not the man. A fielder is a small sprite and CLOSE
       // puts two of them inside one thumb, so hit-testing the sprites is a
       // coin flip. The whole field is partitioned instead: whoever could
       // stand on the tapped point soonest goes and gets it, which means

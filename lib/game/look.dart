@@ -67,12 +67,34 @@ class LookDefaults {
 
   // --- how big a man is --------------------------------------------------
   //
-  // `figureHeightWide` fell with the same arithmetic: a man has to stay
-  // the same fraction of the SCREEN, and the fielding camera is now
-  // 2.2x in, so 4.6 became 4.6 / 2.2. He is still deliberately oversized
-  // at that view — he is a marker for where people are, not a portrait.
+  // `figureHeightWide` fell with the same arithmetic as the fielding
+  // camera: a man has to stay the same fraction of the SCREEN, and that
+  // camera is 2.2x in, so 4.6 became 4.6 / 2.2. He is still deliberately
+  // oversized at that view — a marker for where people are, not a portrait.
+  //
+  // The at-bat size is the one the pixel art is drawn for. A steady man
+  // is fieldFigurePoints tall on a referenceScreenWidth phone at
+  // tightZoom: 1 art pixel = 1pt. Painters draw him at steadyDrawnFactor
+  // times the height they are given, and the viewport is 67 wide, so the
+  // world-unit height is the expression below. It was 1.56, which drew
+  // at 34pt.
+  //
+  // The fielding size is NOT scaled by that same 48/34. At the wide
+  // camera the centre fielder stands about one body behind the thrower;
+  // growing both would put the fielder's feet in the thrower's head.
+  // Fielding men stay markers. The 48px sheets are for the at-bat.
+  static const double referenceScreenWidth = 390;
+  static const double fieldFigurePoints = 48;
+
+  /// Steady's drawn-height factor (`0.92 + 0.12 * build`). The figure-scale
+  /// test locks this to `CavemanPainter.steadyDrawnFactor`.
+  static const double steadyDrawnFactor = 0.92 + 0.12 * 1.0;
+
   static const double figureHeightWide = 2.1;
-  static const double figureHeightTight = 1.56;
+  static const double figureHeightTight =
+      fieldFigurePoints *
+      67 /
+      (steadyDrawnFactor * referenceScreenWidth * tightZoom);
 
   /// How far off the rubber the thrower is DRAWN, in his own heights, so
   /// the rock is not hidden behind him. Render only.

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:caveman_baseball/game/components/caveman.dart';
+import 'package:caveman_baseball/game/look.dart';
 import 'package:caveman_baseball/main_anim.dart';
 import 'package:caveman_baseball/model/player.dart';
 
@@ -22,7 +23,9 @@ void main() {
     }
 
     // The in-game size button is the point of the whole tool.
-    await t.tap(find.text('in-game 28px'));
+    await t.tap(
+      find.text('in-game ${LookDefaults.fieldFigurePoints.round()}px'),
+    );
     await t.pump(const Duration(milliseconds: 16));
     expect(lastException(), isNull);
 
