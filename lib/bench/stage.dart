@@ -16,6 +16,8 @@ import '../game/components/caveman_cartoon.dart';
 import '../game/components/field_component.dart';
 import '../game/ground.dart';
 import '../game/look.dart';
+import '../game/sprites/field_figure.dart';
+import '../game/sprites/sprite_library.dart';
 import '../model/player.dart';
 import '../model/rock.dart';
 
@@ -27,6 +29,7 @@ class StageFigure {
     this.pose = const Pose.still(),
     this.club = false,
     this.archetype = Archetype.steady,
+    this.scale = 1,
   });
 
   /// Field paces, not render units.
@@ -35,6 +38,9 @@ class StageFigure {
   final Pose pose;
   final bool club;
   final Archetype archetype;
+
+  /// Multiplier on the drawn height. 1 is the batting-view size.
+  final double scale;
 }
 
 /// The rock, where it is right now.
@@ -68,6 +74,9 @@ class StagePainter extends CustomPainter {
     this.swingArc,
     this.curve = SwingCurve.shipped,
     this.background = const Color(0xFF161210),
+    this.billboards = false,
+    this.sprites,
+    this.idleSeconds = 0,
   });
 
   final double zoom;
@@ -82,9 +91,18 @@ class StagePainter extends CustomPainter {
   final SwingCurve curve;
   final Color background;
 
+  /// The game's billboard path: an upright cutout on the perspective
+  /// ground, a sprite strip when one is loaded and the code-drawn man
+  /// otherwise. The tuning benches leave this off and keep the cartoon
+  /// painter they were drawn against.
+  final bool billboards;
+  final SpriteLibrary? sprites;
+  final double idleSeconds;
+
   static final _field = FieldComponent(spec: Look.now.fieldSpec);
   static const _man = CartoonCavemanPainter();
   static final _ball = BallComponent();
+  static final _sprites = SpriteLibrary();
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -121,20 +139,43 @@ class StagePainter extends CustomPainter {
     // Far men first, so a near one overlaps him rather than the reverse.
     final sorted = [...figures]..sort((a, b) => b.y.compareTo(a.y));
     for (final f in sorted) {
-      _man.paint(
-        canvas,
-        ground: Offset(Ground.x(f.x, f.y), Ground.y(f.y)),
-        archetype: f.archetype,
-        height: Ground.figureHeightAt(zoom, f.y),
-        holdingClub: f.club,
-        detailed: true,
-        pose: f.pose,
-        curve: curve,
-      );
+      final height = Ground.figureHeightAt(zoom, f.y) * f.scale;
+      final ground = Offset(Ground.x(f.x, f.y), Ground.y(f.y));
+      if (billboards) {
+        // Same call the match makes, so a loaded strip and the art-style
+        // toggle show up here the way they show up in an at-bat.
+        paintFieldFigure(
+          canvas,
+          sprites: sprites ?? _sprites,
+          ground: ground,
+          archetype: f.archetype,
+          height: height,
+          holdingClub: f.club,
+          detailed: true,
+          pose: f.pose,
+          curve: curve,
+          idleSeconds: idleSeconds,
+        );
+      } else {
+        _man.paint(
+          canvas,
+          ground: ground,
+          archetype: f.archetype,
+          height: height,
+          holdingClub: f.club,
+          detailed: true,
+          pose: f.pose,
+          curve: curve,
+        );
+      }
     }
 
     if (swingArc != null) {
-      final batterHeight = Ground.figureHeightAt(zoom, swingArc!.dy);
+      final owner = figures
+          .where((f) => f.x == swingArc!.dx && f.y == swingArc!.dy)
+          .firstOrNull;
+      final batterHeight =
+          Ground.figureHeightAt(zoom, swingArc!.dy) * (owner?.scale ?? 1);
       final path = Path();
       for (var i = 0; i <= 90; i++) {
         final g = CartoonCavemanPainter.swingGeometry(
@@ -175,9 +216,10 @@ class StagePainter extends CustomPainter {
 
 /// The batter, where the game draws him. Every tab needs him and none of
 /// them should be guessing at his position.
-StageFigure batterFigure({double? swingPhase}) => StageFigure(
+StageFigure batterFigure({double? swingPhase, double scale = 1}) => StageFigure(
   x: CavemanBaseballGame.batterX,
   y: CavemanBaseballGame.batterY,
   pose: swingPhase == null ? const Pose.still() : Pose.swing(swingPhase),
   club: true,
+  scale: scale,
 );
