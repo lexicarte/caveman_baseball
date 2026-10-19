@@ -21,6 +21,7 @@ import 'look.dart';
 import 'components/figures_component.dart';
 import 'match_controller.dart';
 import 'sprites/sprite_library.dart';
+import 'swing_timing.dart';
 
 class CavemanBaseballGame extends FlameGame {
   CavemanBaseballGame({required this.match})
@@ -73,11 +74,15 @@ class CavemanBaseballGame extends FlameGame {
   double _zoom = Ground.wideZoom;
   double _look = Ground.wideLook;
 
-  /// How long the bat takes to come through. Short enough to feel like a
-  /// swing, long enough to actually see.
-  /// From the painter, so the animation and the thing driving it cannot
-  /// disagree about how long a swing takes.
+  /// How long the bat takes to come through, as shipped. Short enough to
+  /// feel like a swing, long enough to actually see. From the painter, so
+  /// the animation and the thing driving it cannot disagree about how long
+  /// a swing takes. A saved preset scales this through [liveSwingSeconds].
   static const double swingSeconds = CavemanPainter.swingSeconds;
+
+  /// Seconds the bat is in motion right now. Equals [swingSeconds] until a
+  /// preset says otherwise.
+  double get liveSwingSeconds => SwingTiming.now.swingPlaySeconds;
 
   /// The drawn height of a man at the at-bat view, which is the scale every
   /// swing measurement below is taken at — the camera is held still for the
@@ -146,7 +151,9 @@ class CavemanBaseballGame extends FlameGame {
     // is drawn smaller because he is further away — and arrives at the
     // bat's height exactly at the contact depth.
     final atHand = handDrop * drawnHeight * Ground.depthScale(throwerDepth);
-    final dc = MatchController.contactDepth;
+    // Shipped as MatchController.contactDepth. A preset can move it, and
+    // the rock has to follow or the bat and the score are two events again.
+    final dc = SwingTiming.now.contactDepth;
     if (throwerDepth <= dc) return atHand;
     final atBat = Ground.y(dc) - batHeight;
     final f = ((depth - dc) / (throwerDepth - dc)).clamp(0.0, 1.0);
@@ -297,14 +304,17 @@ class CavemanBaseballGame extends FlameGame {
       _swungThisPitch = true;
       _swingElapsed = 0;
     }
-    if (_swingElapsed >= 0 && _swingElapsed < swingSeconds) {
+    final length = liveSwingSeconds;
+    if (_swingElapsed >= 0 && length > 0 && _swingElapsed < length) {
       _swingElapsed += dt;
     }
   }
 
   double? get _swingPhase {
     if (_swingElapsed < 0) return null;
-    final t = _swingElapsed / swingSeconds;
+    final length = liveSwingSeconds;
+    if (length <= 0) return null;
+    final t = _swingElapsed / length;
     return t >= 1 ? null : t;
   }
 

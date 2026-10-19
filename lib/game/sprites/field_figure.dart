@@ -5,11 +5,25 @@ import '../art/art_style.dart';
 import '../components/caveman.dart';
 import '../components/caveman_cartoon.dart';
 import '../components/caveman_pixel.dart';
+import '../swing_timing.dart';
 import 'sprite_library.dart';
 import 'sprite_strip.dart';
 
 const _pixel = PixelCavemanPainter();
 const _cartoon = CartoonCavemanPainter();
+
+/// Which point of a strip to draw for [pose].
+///
+/// Swings go through the live timing config so the contact frame can move.
+/// At the shipped setting that is the identity, and the strip is sampled
+/// at the pose's own time, exactly as it was before the dial existed.
+double stripPhaseFor(Pose pose, SpriteStripSpec spec, double idleSeconds) {
+  return switch (pose.act) {
+    Act.still => spec.loopPhase(idleSeconds),
+    Act.swing => SwingTiming.now.spritePhase(pose.t),
+    Act.run || Act.throwing => pose.t,
+  };
+}
 
 /// One man on the field. A loaded strip wins; otherwise the code-drawn
 /// figure for the current art style is what ships.
@@ -39,9 +53,7 @@ void paintFieldFigure(
     // taller; a sheet does not.
     final body = CavemanPainter.drawnHeight(Archetype.steady, height);
     final cell = body * strip.spec.cellH / SpriteStripSpec.figureArtPixels;
-    final phase = pose.act == Act.still
-        ? strip.spec.loopPhase(idleSeconds)
-        : pose.t;
+    final phase = stripPhaseFor(pose, strip.spec, idleSeconds);
     strip.draw(
       canvas,
       ground: ground,

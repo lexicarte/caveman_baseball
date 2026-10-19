@@ -9,6 +9,7 @@ import '../../sim/fielder_spec.dart';
 import '../art/art_style.dart';
 import '../caveman_baseball_game.dart';
 import '../match_controller.dart';
+import '../swing_calibration_screen.dart';
 import 'card_view.dart';
 import 'scoreboard.dart';
 
@@ -47,24 +48,46 @@ class MatchHud extends StatelessWidget {
                     Align(
                       alignment: Alignment.centerRight,
                       child: Padding(
-                        padding: const EdgeInsets.only(right: 16, top: 2),
-                        child: ValueListenableBuilder<ArtStyle>(
-                          valueListenable: artStyle,
-                          builder: (context, style, _) => TextButton(
-                            onPressed: () => artStyle.value = style.next,
-                            style: TextButton.styleFrom(
-                              minimumSize: const Size(44, 44),
-                              foregroundColor: const Color(0xFF9A9085),
-                            ),
-                            child: Text(
-                              style.label,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                letterSpacing: 2,
-                                fontWeight: FontWeight.w900,
+                        padding: const EdgeInsets.only(right: 8, top: 2),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (swingLabAvailable)
+                              TextButton(
+                                key: const Key('open-swing-lab'),
+                                onPressed: () => openSwingLab(context, game),
+                                style: TextButton.styleFrom(
+                                  minimumSize: const Size(44, 44),
+                                  foregroundColor: const Color(0xFF9A9085),
+                                ),
+                                child: const Text(
+                                  'SWING',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    letterSpacing: 2,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ValueListenableBuilder<ArtStyle>(
+                              valueListenable: artStyle,
+                              builder: (context, style, _) => TextButton(
+                                onPressed: () => artStyle.value = style.next,
+                                style: TextButton.styleFrom(
+                                  minimumSize: const Size(44, 44),
+                                  foregroundColor: const Color(0xFF9A9085),
+                                ),
+                                child: Text(
+                                  style.label,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    letterSpacing: 2,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ),

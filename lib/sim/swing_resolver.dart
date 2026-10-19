@@ -86,9 +86,13 @@ class SwingResolver {
     /// Widens the window — a slow pitch gives longer to read it, which is
     /// what Nok Noggin buys.
     double windowScale = 1.0,
+
+    /// Half-width of the contact window, in seconds. Null keeps the shipped
+    /// [GameRules.timingWindow], so existing callers are unchanged.
+    double? timingWindow,
     math.Random? rng,
   }) {
-    final window = GameRules.timingWindow * windowScale;
+    final window = (timingWindow ?? GameRules.timingWindow) * windowScale;
     final normalized = window <= 0 ? double.infinity : timingError / window;
 
     // Heavier rocks resist the club. The exponent is deliberately well below
