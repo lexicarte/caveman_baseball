@@ -12,6 +12,7 @@ import '../ground.dart';
 import '../look.dart';
 import '../sprites/field_figure.dart';
 import '../sprites/sprite_library.dart';
+import '../swing_timing.dart';
 import 'caveman.dart';
 
 /// One person to draw, at a place on the field.
@@ -115,6 +116,7 @@ class FiguresComponent extends PositionComponent {
         tint: f.chasing ? (cartoon ? _cartoonChaserTint : _chaserTint) : null,
         holdingClub: f.holdingClub,
         pose: pose,
+        curve: SwingTiming.now.curve,
         detailed: true,
         idleSeconds: idleSeconds,
       );

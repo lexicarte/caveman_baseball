@@ -24,6 +24,7 @@ import '../sim/field_spec.dart';
 import '../sim/fielder_spec.dart';
 import '../sim/game_rules.dart';
 import '../sim/swing_resolver.dart';
+import 'swing_timing.dart';
 
 enum PitchPhase {
   /// Batting: pick a slot. Fielding: pick a rock and a scheme.
@@ -129,10 +130,13 @@ class MatchController {
   /// swing still connects, a fractionally late one does not.
   static const double contactDepth = 0.5;
 
-  /// The instant a perfectly timed swing lands. Everything that scores or
-  /// models a swing measures from HERE, not from the rock reaching the
-  /// plate — they are 5% of the flight apart.
-  double get contactTime => pitchFlightTime * (1 - contactDepth / throwerDepth);
+  /// The instant a perfectly timed swing lands, before any window offset.
+  ///
+  /// Everything that scores or models a swing measures from HERE, not from
+  /// the rock reaching the plate — they are 5% of the flight apart. The
+  /// depth is the live timing config, which ships as [contactDepth].
+  double get contactTime =>
+      SwingTiming.now.contactInstant(pitchFlightTime, throwerDepth);
 
   double get pitchBallDepth {
     final mound = throwerDepth;
@@ -247,12 +251,18 @@ class MatchController {
 
   void _launchPitch() {
     // Nok Noggin slows the pitch, so there is longer to read it.
-    final slow = item?.effect == ItemEffect.slowPitch;
-    pitchFlightTime = GameRules.pitchFlightSeconds * (slow ? 1.45 : 1.0);
-    windUpRemaining = GameRules.windUpSeconds;
+    _syncFlightTime();
+    windUpRemaining = SwingTiming.now.windUpSeconds;
     pitchElapsed = 0;
     phase = PitchPhase.windUp;
     message = '';
+  }
+
+  /// Flight length from the live timing config, so a slider moved during
+  /// the wind-up is already in effect when the rock leaves the hand.
+  void _syncFlightTime() {
+    final slow = item?.effect == ItemEffect.slowPitch;
+    pitchFlightTime = SwingTiming.now.flightFor(rock.id, slow: slow);
   }
 
   void tick(double dt) {
@@ -265,16 +275,24 @@ class MatchController {
         }
 
       case PitchPhase.inFlight:
+        _syncFlightTime();
         pitchElapsed += dt;
         if (!playerBatting) {
-          // The opposing batter commits at his own accuracy.
-          if (pitchElapsed >= contactTime) {
+          // The opposing batter commits at his own accuracy, aimed at the
+          // same on-time instant the player is measured against.
+          if (pitchElapsed >=
+              SwingTiming.now.perfectTap(pitchFlightTime, throwerDepth)) {
             _resolveSwing(_gaussian() * opponentTimingSigma);
           }
           return;
         }
-        // Past the window with no tap is a take.
-        if (pitchElapsed > contactTime + GameRules.timingWindow) {
+        // Past the window with no tap is a take. The slow-pitch scale
+        // widens what counts as contact, not this deadline — that is how
+        // the match already behaved, and a preset should not change it
+        // unless the window dial itself moved.
+        if (pitchElapsed >
+            SwingTiming.now.perfectTap(pitchFlightTime, throwerDepth) +
+                SwingTiming.now.window) {
           _takePitch();
         }
 
@@ -296,7 +314,9 @@ class MatchController {
   /// The tap. Only meaningful while the ball is on its way.
   void swingNow() {
     if (phase != PitchPhase.inFlight || !playerBatting) return;
-    _resolveSwing(pitchElapsed - contactTime);
+    _resolveSwing(
+      pitchElapsed - SwingTiming.now.perfectTap(pitchFlightTime, throwerDepth),
+    );
   }
 
   void _takePitch() {
@@ -311,13 +331,17 @@ class MatchController {
   }
 
   void _resolveSwing(double timingError) {
-    final windowScale = item?.effect == ItemEffect.slowPitch ? 1.35 : 1.0;
+    final timing = SwingTiming.now;
+    final windowScale = item?.effect == ItemEffect.slowPitch
+        ? timing.slowWindowScale
+        : 1.0;
     final outcome = swingResolver.resolve(
       timingError: timingError,
       club: club,
       rock: rock,
       powerScale: batter.powerScale,
       windowScale: windowScale,
+      timingWindow: timing.window,
       rng: _rng,
     );
     swing = outcome;

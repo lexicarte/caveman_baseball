@@ -10,9 +10,13 @@ import 'data/starter_team.dart';
 import 'game/caveman_baseball_game.dart';
 import 'game/hud/match_hud.dart';
 import 'game/match_controller.dart';
+import 'game/swing_preset.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // A saved swing preset, if there is one. No preset leaves the shipped
+  // timing alone.
+  await loadSwingPreset();
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
