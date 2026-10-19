@@ -417,6 +417,7 @@ class CavemanBaseballGame extends FlameGame {
           chasing: post.id == chaserId,
           reach: post.range,
           pose: pose,
+          scale: SwingTiming.now.scaleFor(pitcher: post.id == 'p'),
         ),
       );
     }
@@ -430,6 +431,7 @@ class CavemanBaseballGame extends FlameGame {
         pose: _swingPhase == null
             ? const Pose.still()
             : Pose.swing(_swingPhase!),
+        scale: SwingTiming.now.scaleFor(batter: true),
       ),
     );
 

@@ -25,6 +25,7 @@ class Figure {
     this.holdingClub = false,
     this.reach = 0,
     this.pose = const Pose.still(),
+    this.scale = 1,
   });
 
   final double fieldX;
@@ -40,6 +41,10 @@ class Figure {
   /// gaps between the defence are visible — that is the thing the batter is
   /// reading during the pitch.
   final double reach;
+
+  /// Multiplier on his drawn height. 1 everywhere except the thrower and
+  /// the batter, whose sizes are swing-calibration dials.
+  final double scale;
 }
 
 class FiguresComponent extends PositionComponent {
@@ -106,7 +111,7 @@ class FiguresComponent extends PositionComponent {
       // Height is per MAN, not per frame: he is as tall as his distance
       // says he is. A deep fielder drawn the same size as the batter was
       // the loudest thing saying "this is a board, not a field".
-      final figureHeight = Ground.figureHeightAt(zoom, f.fieldY);
+      final figureHeight = Ground.figureHeightAt(zoom, f.fieldY) * f.scale;
       paintFieldFigure(
         canvas,
         sprites: sprites,

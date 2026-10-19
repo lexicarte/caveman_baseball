@@ -50,6 +50,13 @@ class SwingDials {
   static const slowPitch = SwingDial(1.0, 2.50);
   static const slowWindow = SwingDial(1.0, 2.50);
   static const contactDepth = SwingDial(0.0, 4.0);
+
+  /// Where in a swing (0 at the start, 1 at the finish) a scripted contact
+  /// is drawn. Shared by the five pitch-test marks.
+  static const hitPhase = SwingDial(0.02, 0.98);
+
+  /// Pitcher and batter size, as a multiplier on the batting-view height.
+  static const spriteScale = SwingDial(0.35, 2.50);
 }
 
 /// What Nok Noggin used to multiply the contact window by, before it was a
@@ -75,6 +82,13 @@ class SwingTiming {
     double? slowPitchScale,
     double? slowWindowScale,
     double? contactDepth,
+    double? earliestHit,
+    double? fairEarly,
+    double? centreHit,
+    double? fairLate,
+    double? latestHit,
+    double? pitcherScale,
+    double? batterScale,
   }) : swingSeconds = SwingDials.swingSeconds.pin(
          swingSeconds ?? CavemanPainter.swingSeconds,
        ),
@@ -109,7 +123,16 @@ class SwingTiming {
        // The controller owns this constant. It cannot be read from here
        // without an import cycle, and the calibration test is what keeps
        // the two from drifting.
-       contactDepth = SwingDials.contactDepth.pin(contactDepth ?? 0.5);
+       contactDepth = SwingDials.contactDepth.pin(contactDepth ?? 0.5),
+       earliestHit = SwingDials.hitPhase.pin(earliestHit ?? shippedEarliestHit),
+       fairEarly = SwingDials.hitPhase.pin(fairEarly ?? shippedFairEarly),
+       centreHit = SwingDials.hitPhase.pin(
+         centreHit ?? SwingCurve.shipped.whip,
+       ),
+       fairLate = SwingDials.hitPhase.pin(fairLate ?? shippedFairLate),
+       latestHit = SwingDials.hitPhase.pin(latestHit ?? shippedLatestHit),
+       pitcherScale = SwingDials.spriteScale.pin(pitcherScale ?? 1),
+       batterScale = SwingDials.spriteScale.pin(batterScale ?? 1);
 
   /// The swing the game ships with. [now] starts as this same value.
   static final shipped = SwingTiming();
@@ -184,6 +207,46 @@ class SwingTiming {
   /// is drawn to arrive at the bat at this depth, and on time is that
   /// arrival plus [windowOffset].
   final double contactDepth;
+
+  /// Swing phase of the earliest contact. The pitch test sends that ball
+  /// foul to the left. Shipped early in the swing, before the sweet spot.
+  final double earliestHit;
+
+  /// Swing phase of the earliest ball that stays fair, along the 3rd-base
+  /// line. Between [earliestHit] and [centreHit] as shipped.
+  final double fairEarly;
+
+  /// Swing phase of a perfect ball up the middle. Shipped at [whip], so a
+  /// centre hit is drawn where the procedural bat already meets the rock.
+  final double centreHit;
+
+  /// Swing phase of the latest ball that stays fair, along the 1st-base line.
+  final double fairLate;
+
+  /// Swing phase of the latest contact. The pitch test sends that ball foul
+  /// to the right.
+  final double latestHit;
+
+  /// Drawn height of the thrower, times the batting-view size. 1 is shipped.
+  final double pitcherScale;
+
+  /// Drawn height of the batter, times the batting-view size. 1 is shipped.
+  final double batterScale;
+
+  /// Shipped phases. [centreHit] uses the procedural whip instead, so the
+  /// two cannot be typed twice.
+  static const double shippedEarliestHit = 0.12;
+  static const double shippedFairEarly = 0.21;
+  static const double shippedFairLate = 0.44;
+  static const double shippedLatestHit = 0.62;
+
+  /// Height multiplier for one man. Fielders who are neither the thrower
+  /// nor the batter stay at 1 — calibrating them is not this screen.
+  double scaleFor({bool pitcher = false, bool batter = false}) {
+    if (batter) return batterScale;
+    if (pitcher) return pitcherScale;
+    return 1;
+  }
 
   /// Strip phase of the contact frame. The same number as the procedural
   /// arc's shipped contact, so "0.67" means one thing in both drawings.
@@ -287,6 +350,13 @@ class SwingTiming {
     double? slowPitchScale,
     double? slowWindowScale,
     double? contactDepth,
+    double? earliestHit,
+    double? fairEarly,
+    double? centreHit,
+    double? fairLate,
+    double? latestHit,
+    double? pitcherScale,
+    double? batterScale,
   }) => SwingTiming(
     swingSeconds: swingSeconds ?? this.swingSeconds,
     swingSpeed: swingSpeed ?? this.swingSpeed,
@@ -304,6 +374,13 @@ class SwingTiming {
     slowPitchScale: slowPitchScale ?? this.slowPitchScale,
     slowWindowScale: slowWindowScale ?? this.slowWindowScale,
     contactDepth: contactDepth ?? this.contactDepth,
+    earliestHit: earliestHit ?? this.earliestHit,
+    fairEarly: fairEarly ?? this.fairEarly,
+    centreHit: centreHit ?? this.centreHit,
+    fairLate: fairLate ?? this.fairLate,
+    latestHit: latestHit ?? this.latestHit,
+    pitcherScale: pitcherScale ?? this.pitcherScale,
+    batterScale: batterScale ?? this.batterScale,
   );
 
   Map<String, Object> toMap() => {
@@ -323,6 +400,13 @@ class SwingTiming {
     'slowPitchScale': slowPitchScale,
     'slowWindowScale': slowWindowScale,
     'contactDepth': contactDepth,
+    'earliestHit': earliestHit,
+    'fairEarly': fairEarly,
+    'centreHit': centreHit,
+    'fairLate': fairLate,
+    'latestHit': latestHit,
+    'pitcherScale': pitcherScale,
+    'batterScale': batterScale,
   };
 
   String toJson() => const JsonEncoder.withIndent('  ').convert(toMap());
@@ -363,6 +447,13 @@ class SwingTiming {
       slowPitchScale: _num(json['slowPitchScale']),
       slowWindowScale: _num(json['slowWindowScale']),
       contactDepth: _num(json['contactDepth']),
+      earliestHit: _num(json['earliestHit']),
+      fairEarly: _num(json['fairEarly']),
+      centreHit: _num(json['centreHit']),
+      fairLate: _num(json['fairLate']),
+      latestHit: _num(json['latestHit']),
+      pitcherScale: _num(json['pitcherScale']),
+      batterScale: _num(json['batterScale']),
     );
   }
 
